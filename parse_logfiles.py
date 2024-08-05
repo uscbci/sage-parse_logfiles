@@ -3,32 +3,28 @@
 import sys
 import os
 import re
-# import numpy as np
-import argparse
 
-#command line options
-parser = argparse.ArgumentParser()
-parser.add_argument("--subjects",help="process listed subjects",nargs='+',action="store",required=True)
-args = parser.parse_args()
+# set paths
+logfiledir = "/Volumes/BCI/SAGE/logfiles"
+outputfolder = "/Volumes/BCI/SAGE/fslstimfiles"
 
-#set paths
-subjects = args.subjects
-logfiledir = "/Users/jonask/fMRI/SAGE/logfiles"
-outputfolder = "/Users/jonask/fMRI/SAGE/fslstimfiles"
+# We will process all files that haven't already been processed
 allfiles = os.listdir(logfiledir)
-
-#filter logfiles for desired subjects
-logfiles = []
-for subject in subjects:
-	logfiles += [elem for elem in allfiles if subject in elem and ".txt" in elem]
+donefiles = os.listdir(outputfolder)
+logfiles = [elem for elem in allfiles if elem[4:9] not in donefiles ]
 
 print("Will process these logfiles:")
 print(logfiles)
 
-pattern = "^\d\d.*"
+pattern = "^\d.*"
 
-#parse each logfile
+# parse each logfile
 for logfile in logfiles:
+
+	subject = logfile[4:9]
+	outputfolder = outputfolder + "/" + subject
+	if ( not os.path.exists(outputfolder)):
+		os.mkdir(outputfolder)
 
 	basename = os.path.splitext(logfile)[0]
 	outfile = "%s/%s_fsl.txt" % (outputfolder,basename)
@@ -38,20 +34,65 @@ for logfile in logfiles:
 	logfilehandle = open(logfilepath)
 	lines = [elem for elem in logfilehandle.readlines() if "#" not in elem]
 
-	run = 0 
+	run = 0
+
+	trialcounter = {"new":0, "old_correct": 0, "old_similarerror": 0, "old_newerror" : 0, "similar_correct": 0, "similar_olderror": 0, "similar_newerror": 0, "junk" :0}
 
 	for line in lines:
 		result = re.match(pattern,line)
 		if (result):
-			(trial, stim, cond, lag, lbin, startt, resp, corr, rt) = line.split(",")
+			items = line.split(",")
+			#(trial, stim, cond, lag, lbin, startt, resp, corr, rt) = line.split(",")
 			
-			trial = int(trial)
-			startt = float(startt)
-			run = (trial // 81) + 1
+			condition = ""
 
-			print("Run %d: Trial %d at %.3f" % (run,trial,startt) )
+			trial = int(items[0])
+			startt = float(items[5])
 
-			stimfilename = "%s/%s_run%d_%s.txt" % (outputfolder,subject,run,cond)
+			if (len(items) > 7):
+				rt = items[6]
+				cond = int(items[2])
+				resp = int(items[6]) 
+				corr = int(items[7])
+				if (cond == 0 or cond == 2):
+					condition = "new"
+				if (cond == 1 and corr == 1):
+					condition = "old_correct"
+				if (cond == 1 and corr == 0):
+					if (resp == 2 ):
+						condition = "old_similarerror"
+					if (resp == 3):
+						condition = "old_newerror"
+				if (cond == 3 and corr == 1):
+					condition = "similar_correct"
+				if (cond == 3 and corr == 0):
+					if (resp == 1):
+						condition = "similar_olderror"
+					if (resp == 3):
+						condition = "similar_newerror"
+			else:
+				condition = "junk"
+
+			if (trial >=0 and trial <= 80):
+				run = 1
+			if (trial > 80 and trial <= 160):
+				run = 2
+			if (trial > 160 and trial <= 240):
+				run = 3
+			if (trial > 240):
+				run = 4
+
+			trialcounter[condition] = trialcounter[condition] + 1
+
+
+			print("Run %d: Trial %d at %.3f %s" % (run,trial,startt, condition) )
+
+			stimfilename = "%s/%s_run%d_%s_all.txt" % (outputfolder,subject,run,condition)
 			stimfile = open(stimfilename,"a")
-			stimfile.write("%.2f %.2f 1\n" % (startt,float(rt)))
+			stimfile.write("%.2f 3.5 1\n" % (startt))
 			stimfile.close()
+
+			stimfiletrial_name = "%s/%s_run%d_%s_%d.txt" % (outputfolder,subject,run,condition,trialcounter[condition])
+			stimfiletrial = open(stimfiletrial_name,"a")
+			stimfiletrial.write("%.2f 3.5 1\n" % (startt))
+			stimfiletrial.close()
