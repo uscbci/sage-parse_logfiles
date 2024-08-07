@@ -87,12 +87,12 @@ for logfile in logfiles:
 
 			print("Run %d: Trial %d at %.3f %s" % (run,trial,startt, condition) )
 
-			stimfilename = "%s/%s_run%d_%s_all.txt" % (outputfolder,subject,run,condition)
+			stimfilename = "%s/%s_run%d_%s_all.txt" % (subjfolder,subject,run,condition)
 			stimfile = open(stimfilename,"a")
 			stimfile.write("%.2f 3.5 1\n" % (startt))
 			stimfile.close()
 
-			stimfiletrial_name = "%s/%s_run%d_%s_%d.txt" % (outputfolder,subject,run,condition,trialcounter[condition])
+			stimfiletrial_name = "%s/%s_run%d_%s_%d.txt" % (subjfolder,subject,run,condition,trialcounter[condition])
 			stimfiletrial = open(stimfiletrial_name,"a")
 			stimfiletrial.write("%.2f 3.5 1\n" % (startt))
 			stimfiletrial.close()
