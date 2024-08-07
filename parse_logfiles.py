@@ -22,12 +22,12 @@ pattern = "^\d.*"
 for logfile in logfiles:
 
 	subject = logfile[4:9]
-	outputfolder = outputfolder + "/" + subject
-	if ( not os.path.exists(outputfolder)):
-		os.mkdir(outputfolder)
+	subjfolder = outputfolder + "/" + subject
+	if ( not os.path.exists(subjfolder)):
+		os.mkdir(subjfolder)
 
 	basename = os.path.splitext(logfile)[0]
-	outfile = "%s/%s_fsl.txt" % (outputfolder,basename)
+	outfile = "%s/%s_fsl.txt" % (subjfolder,basename)
 	print("outputfile is %s" % outfile)
 
 	logfilepath = "%s/%s" % (logfiledir,logfile)
